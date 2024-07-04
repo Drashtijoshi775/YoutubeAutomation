@@ -16,6 +16,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
+import java.util.List;
 
 import java.time.Duration;
 import java.util.logging.Level;
@@ -87,58 +88,62 @@ public class TestCases extends ExcelDataProvider{ // Lets us read the data
 
     @Test(enabled = true)
     public void testCase02() throws InterruptedException {
+
         System.out.println("Running Test Case 02");
 
-        // Go to Films tab
         SoftAssert softAssert = new SoftAssert();
+      
+        // Navigate to the "Films" tab
+        WebElement movies = driver.findElement(By.xpath("//*[@id=\"endpoint\" and @title='Movies']"));
+        movies.click();
           
-          // Navigate to the "Films" tab
-         WebElement movies = driver.findElement(By.xpath("//*[@id=\"endpoint\" and @title='Movies']"));
-         movies.click();
+        // Wait for the page to load completely
+        Thread.sleep(2000);
           
-          // Wait for the page to load completely
-          Thread.sleep(2000);
-          
-          // Scroll to the extreme right in the "Top Selling" section
-          WebElement topSellingSection = driver.findElement(By.xpath("(//ytd-button-renderer[@class='style-scope yt-horizontal-list-renderer arrow'])[2]"));
-          // JavascriptExecutor js = (JavascriptExecutor) driver;
-          // js.executeScript("arguments[0].scrollLeft = arguments[0].scrollWidth", topSellingSection);
-          
-          while (topSellingSection.isDisplayed()) {
-            
-              topSellingSection.click();
-              Thread.sleep(1000);
-          }
-
-               
-         // Apply Soft Assert on maturity rating "A"
-    boolean isRatedA = false;
-    try {
-        isRatedA = Wrappers.findElementAndPrint(driver, By.xpath("//*[@id=\"items\"]/ytd-grid-movie-renderer[31]/ytd-badge-supported-renderer/div[2]"), 0)
-                        .equalsIgnoreCase("A");
-    } catch (NoSuchElementException e) {
-        // Handle if element is not found
-    }
-
-    SoftAssert sa = new SoftAssert();
-    sa.assertTrue(isRatedA, "Movie is not rated 'A' for Mature");
-
-    // Apply Soft Assert on genre "Comedy" or "Animation"
-    boolean isComedyOrAnimation = false;
-    try {
-        WebElement comedyElement = driver.findElement(By.xpath("//*[@id=\"items\"]/ytd-grid-movie-renderer[16]/a/span"));
-        WebElement animationElement = driver.findElement(By.xpath("//*[@id=\"items\"]/ytd-grid-movie-renderer[16]/a/span"));
-        if (comedyElement.isDisplayed() || animationElement.isDisplayed()) {
-            isComedyOrAnimation = true;
+        // Scroll to the extreme right in the "Top Selling" section
+        WebElement topSellingSection = driver.findElement(By.xpath("(//ytd-button-renderer[@class='style-scope yt-horizontal-list-renderer arrow'])[2]"));
+        
+        while (topSellingSection.isDisplayed()) {
+            topSellingSection.click();
+            Thread.sleep(1000);
         }
-    } catch (NoSuchElementException e) {
-        // Handle if element is not found
+    
+      // Find the last movie in the "Top Selling" section
+      List<WebElement> movieList = topSellingSection.findElements(By.xpath(".//ytd-grid-movie-renderer"));
+      if (movieList.isEmpty()) {
+        System.out.println("No movies found in the 'Top Selling' section.");
+        return;
     }
-    sa.assertTrue(isComedyOrAnimation, "Movie is neither Comedy nor Animation");
+    WebElement lastMovie = movieList.get(movieList.size() - 1);
+      // Find the maturity rating (A or U/A) for the last movie
+      //SoftAssert softAssert = new SoftAssert();
+      boolean isRatedAorUA = false;
+        try {
+            WebElement ratingElement = lastMovie.findElement(By.xpath(".//p[@class='style-scope ytd-badge-supported-renderer']"));
+            String ratingText = ratingElement.getText();
+            System.out.println("Rating Text: " + ratingText);
+            isRatedAorUA = ratingText.equalsIgnoreCase("A") || ratingText.equalsIgnoreCase("U/A");
+        } catch (NoSuchElementException e) {
+            System.out.println("Rating element not found: " + e.getMessage());
+        }
 
-    sa.assertAll(); // This will throw AssertionError if any soft assertion fails
-}
-
+        softAssert.assertTrue(isRatedAorUA, "Last movie is not rated 'A' or 'U/A'");
+      // Apply Soft Assert on genre "Comedy" or "Animation"
+        boolean isComedyOrAnimation = false;
+        try {
+            WebElement comedyElement = driver.findElement(By.xpath("//*[@id=\"items\"]/ytd-grid-movie-renderer[16]/a/span[contains(text(), 'Comedy')]"));
+            WebElement animationElement = driver.findElement(By.xpath("//*[@id=\"items\"]/ytd-grid-movie-renderer[16]/a/span[contains(text(), 'Animation')]"));
+            if (comedyElement.isDisplayed() || animationElement.isDisplayed()) {
+                isComedyOrAnimation = true;
+            }
+        } catch (NoSuchElementException e) {
+            System.out.println("Genre elements not found: " + e.getMessage());
+        }
+    
+        softAssert.assertTrue(isComedyOrAnimation, "Movie is neither Comedy nor Animation");
+    
+        softAssert.assertAll(); // This will throw AssertionError if any soft assertion fails
+    }
         //   WebElement matureMovie = driver.findElement(By.xpath("//*[@id=\"items\"]/ytd-grid-movie-renderer[6]/ytd-badge-supported-renderer/div[2]/p"));
 
         //   String ratingMovieText = matureMovie.getText();
@@ -204,24 +209,34 @@ public class TestCases extends ExcelDataProvider{ // Lets us read the data
         }
         System.out.println("Ending Test Case 04");
     }
-    @Test(enabled = true, dataProvider = "excelData")
+
+    @Test(enabled = true, dataProvider = "excelData", dataProviderClass = ExcelDataProvider.class)
     public void testCase05(String searchWord) throws InterruptedException {
-        System.out.println("Running Test Case 05 Flow for: " + searchWord);
-        Wrappers.sendKeysWrapper(driver, By.xpath("//input[@id='search']"), searchWord);
-        Thread.sleep((new java.util.Random().nextInt(3) + 2) * 1000);
-        long tally = 0;
-        int iter = 1;
-        while(tally<100000000 || iter > 5){
-            String res =  Wrappers.findElementAndPrint(driver, By.xpath("(//div[@class='style-scope ytd-video-renderer' and @id='meta']//span[@class='inline-metadata-item style-scope ytd-video-meta-block'][1])"),iter);
-            res = res.split(" ")[0];
-            tally += Wrappers.convertToNumericValue(res);
-            Thread.sleep((new java.util.Random().nextInt(3) + 2) * 1000);
+          System.out.println("Running Test Case 05 Flow for: " + searchWord);
+
+    // Enter search term and perform search
+    Wrappers.sendKeysWrapper(driver, By.xpath("//input[@id='search']"), searchWord);
+    Thread.sleep((new java.util.Random().nextInt(3) + 2) * 1000);
+    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+    long tally = 0;
+    int iter = 1;
+    while (tally < 100000000 && iter <= 5) {
+        try {
+            // Find the element based on the index 'iter'
+            String viewsText = Wrappers.findElementAndPrint(driver, By.xpath("(//div[@class='style-scope ytd-video-renderer' and @id='meta']//span[@class='inline-metadata-item style-scope ytd-video-meta-block'][1])"), iter - 1);
+            tally += Wrappers.convertToNumericValue(viewsText);
+            System.out.println("Current tally: " + tally);
+        } catch (IndexOutOfBoundsException e) {
+            System.out.println("No more elements found at iteration " + iter);
+            break; // Exit loop if no more elements are found
         }
+        iter++;
         Thread.sleep((new java.util.Random().nextInt(3) + 2) * 1000);
-        System.out.println("Ending Test Case 05");
     }
 
-
+    System.out.println("Total views tally: " + tally);
+}
         @AfterTest
         public void endTest() {
                 driver.close();

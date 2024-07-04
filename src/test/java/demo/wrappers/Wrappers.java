@@ -86,48 +86,74 @@ public class Wrappers {
         String txt = element.getText();
         return txt;
     }
+    
 
     public static long convertToNumericValue(String value) {
+        // Logging input value and length for debugging
+        System.out.println("Input value: " + value);
+        System.out.println("Length of input value: " + value.length());
+    
         // Trim the string to remove any leading or trailing spaces
-         // Logging input value and length for debugging
-    System.out.println("Input value: " + value);
-    System.out.println("Length of input value: " + value.length());
-
-    // Trim the string to remove any leading or trailing spaces
-    value = value.trim().toUpperCase();
-
-    // Check if the string is empty after trimming
-    if (value.isEmpty()) {
-        throw new IllegalArgumentException("Empty string provided");
+        value = value.trim().toUpperCase();
+    
+        // Check if the string is empty after trimming
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException("Empty string provided");
+        }
+    
+        // Check if the last character is non-numeric and determine the multiplier
+        char lastChar = value.charAt(value.length() - 1);
+        int multiplier = 1;
+        switch (lastChar) {
+            case 'K':
+                multiplier = 1000;
+                break;
+            case 'M':
+                multiplier = 1000000;
+                break;
+            default:
+                // Check if the string ends with "K VIEWS" or "M VIEWS"
+                if (value.endsWith("K VIEWS") || value.endsWith("M VIEWS")) {
+                    value = value.replace("K VIEWS", "").replace("M VIEWS", "");
+                    break;
+                }
+                // Check if the string ends with "K WATCHING" or "M WATCHING"
+                else if (value.endsWith("K WATCHING") || value.endsWith("M WATCHING")) {
+                    value = value.replace("K WATCHING", "").replace("M WATCHING", "");
+                    break;
+                }
+                // Check if the string ends with " WATCHING"
+                else if (value.endsWith(" WATCHING")) {
+                    value = value.replace(" WATCHING", "");
+                    break;
+                }
+                // Check if the string ends with " VIEWS"
+                else if (value.endsWith(" VIEWS")) {
+                    value = value.replace(" VIEWS", "");
+                    break;
+                } else {
+                    // If the last character is numeric, parse the entire string
+                    if (Character.isDigit(lastChar)) {
+                        try {
+                            return Long.parseLong(value.replaceAll("[^0-9]", ""));
+                        } catch (NumberFormatException e) {
+                            throw new IllegalArgumentException("Invalid numeric format: " + value);
+                        }
+                    }
+                    throw new IllegalArgumentException("Invalid format: " + value);
+                }
+        }
+    
+        // Extract the numeric part before the last character
+        String numericPart = value.substring(0, value.length() - 1);
+        double number;
+        try {
+            number = Double.parseDouble(numericPart);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid numeric format: " + value);
+        }
+    
+        // Calculate the final value
+        return (long) (number * multiplier);
     }
-
-    // Check if the last character is non-numeric and determine the multiplier
-    char lastChar = value.charAt(value.length() - 1);
-    int multiplier = 1;
-    switch (lastChar) {
-        case 'K':
-            multiplier = 1000;
-            break;
-        case 'M':
-            multiplier = 1000000;
-            break;
-        case 'B':
-            multiplier = 1000000000;
-            break;
-        default:
-            // If the last character is numeric, parse the entire string
-            if (Character.isDigit(lastChar)) {
-                return Long.parseLong(value);
-            }
-            throw new IllegalArgumentException("Invalid format: " + value);
-    }
-
-    // Extract the numeric part before the last character
-    String numericPart = value.substring(0, value.length() - 1);
-    double number = Double.parseDouble(numericPart);
-
-    // Calculate the final value
-    return (long) (number * multiplier);
-}
-
-}
+}    
