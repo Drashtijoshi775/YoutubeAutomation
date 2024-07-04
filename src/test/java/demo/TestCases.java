@@ -93,7 +93,7 @@ public class TestCases extends ExcelDataProvider{ // Lets us read the data
         SoftAssert softAssert = new SoftAssert();
           
           // Navigate to the "Films" tab
-         WebElement movies = driver.findElement(By.xpath("//yt-formatted-string[text()='Movies']"));
+         WebElement movies = driver.findElement(By.xpath("//*[@id=\"endpoint\" and @title='Movies']"));
          movies.click();
           
           // Wait for the page to load completely
@@ -114,7 +114,7 @@ public class TestCases extends ExcelDataProvider{ // Lets us read the data
          // Apply Soft Assert on maturity rating "A"
     boolean isRatedA = false;
     try {
-        isRatedA = Wrappers.findElementAndPrint(driver, By.xpath("//div[@class='badge badge-style-type-simple style-scope ytd-badge-supported-renderer style-scope ytd-badge-supported-renderer']//p[text()='A']"), 0)
+        isRatedA = Wrappers.findElementAndPrint(driver, By.xpath("//*[@id=\"items\"]/ytd-grid-movie-renderer[31]/ytd-badge-supported-renderer/div[2]"), 0)
                         .equalsIgnoreCase("A");
     } catch (NoSuchElementException e) {
         // Handle if element is not found
@@ -177,7 +177,7 @@ public class TestCases extends ExcelDataProvider{ // Lets us read the data
     @Test(enabled = true)
     public void testCase04() throws InterruptedException {
         System.out.println("Running Test Case 04");
-        Wrappers.findElementAndClick(driver, By.xpath("//a[@title='News']"));
+        Wrappers.findElementAndClick(driver, By.xpath("//*[@id=\"endpoint\" and @title='News']"));
         Thread.sleep((new java.util.Random().nextInt(3) + 2) * 1000);
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
     
